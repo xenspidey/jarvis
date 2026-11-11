@@ -23,8 +23,10 @@ apt-get -y full-upgrade
 # No Debian nodejs/npm: the Teams CLI runs on Hermes' own Node (see README, step 5).
 # libsecret-1-0: without it the Teams CLI keeps its login in memory only, so `teams login`
 # doesn't carry over to the next `teams` command.
+# dbus-user-session: gives jarvis' systemd --user a /run/user/<uid>/bus, which Hermes'
+# cron/Kanban workers need (systemd-run --user). The minimal template lacks it.
 apt-get -y install git curl ca-certificates tar coreutils libatomic1 sudo locales tzdata \
-  libsecret-1-0
+  libsecret-1-0 dbus-user-session
 ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
 echo "America/New_York" > /etc/timezone
 

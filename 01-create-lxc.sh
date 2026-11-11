@@ -6,7 +6,7 @@ set -euo pipefail
 
 # ---- Edit these to match your host ----
 CT_NAME="xen-jarvis"
-STORAGE="local-lvm"        # rootfs storage
+STORAGE="local-zfs"        # rootfs storage (the R730 has local-zfs, no local-lvm)
 TEMPLATE_STORAGE="local"   # where CT templates live
 BRIDGE="vmbr0"             # home LAN bridge (NOT vmbr1 / VPN bridge)
 IP_CFG="dhcp"              # or e.g. "192.168.128.180/24,gw=192.168.128.1"
@@ -30,8 +30,11 @@ fi
 
 echo ">> Locating latest Debian 13 template..."
 pveam update >/dev/null
-TEMPLATE="$(pveam available --section system | awk '/debian-13-standard/ {print $2}' | sort -V | tail -1)"
-[ -n "$TEMPLATE" ] || { echo "No debian-13-standard template found"; exit 1; }
+# pveam lists amd64 and arm64 builds; a plain version sort would pick arm64. Match the host.
+ARCH="$(dpkg --print-architecture)"
+TEMPLATE="$(pveam available --section system \
+  | awk -v a="$ARCH" '$2 ~ "^debian-13-standard_.*_" a "\\.tar" {print $2}' | sort -V | tail -1)"
+[ -n "$TEMPLATE" ] || { echo "No debian-13-standard template for $ARCH found"; exit 1; }
 if ! pveam list "$TEMPLATE_STORAGE" | grep -q "$TEMPLATE"; then
   pveam download "$TEMPLATE_STORAGE" "$TEMPLATE"
 fi

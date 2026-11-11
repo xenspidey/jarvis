@@ -36,7 +36,9 @@ Fixed in the kit:
 - `hermes model` → Anthropic, Fable. In v0.23.1 the `hermes` chat CLI goes through the gateway (`hermes gateway ensure`) and starts an unmanaged background gateway if none is running, so the system service is installed BEFORE first chat (README order needs updating to match).
 - Root-run `hermes` under `pct exec` (no SUDO_USER) uses /root/.hermes as a borrowing data root and refuses (ownership guard). Working form: `pct exec 112 -- env HERMES_HOME=/home/jarvis/.hermes /home/jarvis/.local/bin/hermes gateway install --system --run-as-user jarvis --start-now --start-on-login`. That gave unit **`hermes-gateway-c51abf38`** (hashed name, because the home isn't root's native one); it is running as jarvis. A failed first attempt may have left `/root/.hermes` (harmless).
 - Root-run hermes leaves root-owned `__pycache__/*.pyc` in the checkout; fixed with `find /home/jarvis ! -user jarvis -exec chown jarvis:jarvis {} +`. For lifecycle as root, prefer `systemctl … hermes-gateway-c51abf38` (no Python as root); `systemctl reload` = graceful drain.
-- Open: install warned `/run/user/1000/bus did not appear` (linger enabled; user@1000 needed for cron/Kanban workers).
+- Install warned `/run/user/1000/bus did not appear`: fixed by `apt-get install dbus-user-session` + `systemctl restart user@1000.service` (now in the bootstrap).
+- Terminal chat verified: replies as Jarvis ("Hello, Brian."), config.yaml `provider: "anthropic"`, `default: "claude-fable-5-2"`; the banner's "Nous Research" is branding. Only one gateway process (inside the service cgroup), so the CLI attached to the service. Shared metrics: off.
+- Next: Telegram (README step 4), then Teams (step 5, stop the service during the M365 login).
 
 ## Phase 2 — planned, not started
 - Hardware: 1–2 Tesla P40 (24 GB, Pascal sm_61) in the R730. Needs the GPU enablement kit, 1100 W PSUs, and the correct riser-to-GPU power cable (check orientation; the wrong cable has fried P40s). Driver branch 580 (the last for Pascal, LTS to mid-2028). Ollama via its CUDA 12 runner. vLLM does NOT support sm_61.

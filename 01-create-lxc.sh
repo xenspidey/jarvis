@@ -19,6 +19,15 @@ VMID="${VMID:-$(pvesh get /cluster/nextid)}"
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 
+# Re-running this script must not create a second Jarvis CT.
+EXISTING="$(pct list | awk -v n="$CT_NAME" 'NR>1 && $NF==n {print $1}')"
+if [ -n "$EXISTING" ]; then
+  echo "A CT named $CT_NAME already exists (VMID $EXISTING). To re-run only the bootstrap:"
+  echo "  pct push $EXISTING $HERE/02-bootstrap.sh /root/02-bootstrap.sh --perms 755"
+  echo "  pct exec $EXISTING -- /root/02-bootstrap.sh"
+  exit 1
+fi
+
 echo ">> Locating latest Debian 13 template..."
 pveam update >/dev/null
 TEMPLATE="$(pveam available --section system | awk '/debian-13-standard/ {print $2}' | sort -V | tail -1)"
@@ -40,20 +49,31 @@ pct create "$VMID" "$TEMPLATE_STORAGE:vztmpl/$TEMPLATE" \
 
 pct start "$VMID"
 echo ">> Waiting for network..."
+NET_OK=0
 for _ in $(seq 1 30); do
-  pct exec "$VMID" -- getent hosts deb.debian.org >/dev/null 2>&1 && break
+  if pct exec "$VMID" -- getent hosts deb.debian.org >/dev/null 2>&1; then NET_OK=1; break; fi
   sleep 2
 done
+if [ "$NET_OK" -ne 1 ]; then
+  echo "CT $VMID has no working DNS/network after 60 s. Check BRIDGE/IP_CFG, then: pct enter $VMID"
+  exit 1
+fi
 
 pct push "$VMID" "$HERE/02-bootstrap.sh" /root/02-bootstrap.sh --perms 755
 pct push "$VMID" "$HERE/SOUL.md"         /root/SOUL.md
 pct push "$VMID" "$HERE/env.template"    /root/env.template
-pct exec "$VMID" -- /root/02-bootstrap.sh
+if ! pct exec "$VMID" -- /root/02-bootstrap.sh; then
+  echo
+  echo "!! Bootstrap failed inside CT $VMID (the CT itself is fine). Fix the cause, then re-run:"
+  echo "   pct exec $VMID -- /root/02-bootstrap.sh"
+  exit 1
+fi
 
 IP="$(pct exec "$VMID" -- hostname -I | awk '{print $1}')"
 echo
 echo "=================================================="
 echo " CT $VMID ($CT_NAME) is up at $IP"
+[ "$IP_CFG" = "dhcp" ] && echo " (DHCP: reserve $IP for this CT on your router; Caddy points at it.)"
 echo " Next:  pct enter $VMID   then   su - jarvis"
 echo " and follow README.md step 3."
 echo "=================================================="

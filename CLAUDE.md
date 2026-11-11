@@ -17,11 +17,17 @@ Brian's personal assistant: Nous Research **Hermes Agent**, using the persona "J
 
 ## Phase 1 — basics (CURRENT)
 Files in this folder: `01-create-lxc.sh` (run on the host), `02-bootstrap.sh` (runs in the CT), `SOUL.md`, `env.template`, `Caddyfile.snippet`, `README.md` (runbook).
-Untested on real hardware. Open items to verify while running it:
-- Does the installer accept `--non-interactive --skip-computer-use` via `bash -s --`?
-- Is the Teams webhook on 3978 bound to 0.0.0.0 or only to 127.0.0.1? If only localhost, xen-pxy can't reach it. Find a bind option, or put a local proxy in the CT.
-- Where the Teams extra goes: `python -c "import pm; pm.sync_venv(['teams'], explicit=True)"` needs Hermes' venv Python.
-- Does Debian 13's `nodejs` meet the Teams CLI's version requirement?
+Not yet run on the R730. The open items were answered from the Hermes source at stable tag v0.23.1 (the installer's default channel) and the Teams CLI 3.1.0 package:
+- Installer flags: `--non-interactive` and `--skip-computer-use` are both accepted (scripts/install.sh).
+- Teams bind: the listener defaults to all interfaces, IPv4+IPv6 (`_DEFAULT_HOST = None`); `TEAMS_HOST` pins it. `/health` returns `ok`. xen-pxy can reach it, so no local proxy is needed.
+- Teams extra: `hermes pm install --extra teams` (also `anthropic`, `telegram`; all are lazy-installed otherwise). The bootstrap runs it.
+- Node: Teams CLI 3.x needs Node >= 22.12. Debian 13's `nodejs` version wasn't checked (packages.debian.org isn't reachable from the cloud session), so the kit doesn't use it. `~/.local/bin/teams` runs the CLI on Hermes' managed Node (v26.12.1 in v0.23.1) through `with-hermes-node`, which calls `hermes pm env node npm`.
+
+Fixed in the kit:
+- `sudo -i` turns newlines into line continuations, so the old two-line `bash -lc '...'` passed `grep ...` to install.sh ("unknown option"), Hermes never installed, and the `||` hid it. Commands sent through `sudo -iu` must stay on one line.
+- The installer creates `~/.hermes/.env` itself, from `.env.example`, which has live defaults. The kit now appends its block once, guarded by a marker line.
+- Teams CLI login is in-memory only without `libsecret-1-0` (now installed); with it, the CLI falls back to a plaintext `~/.config/teams-cli/msal-cache.json`. The runbook registers the bot before the gateway starts, then runs `teams logout` and deletes the cache. Login uses `--device-code` (headless CT).
+- `01-create-lxc.sh` refuses to create a duplicate CT, fails clearly if the network doesn't come up, and prints the re-run command if the bootstrap fails.
 
 ## Phase 2 — planned, not started
 - Hardware: 1–2 Tesla P40 (24 GB, Pascal sm_61) in the R730. Needs the GPU enablement kit, 1100 W PSUs, and the correct riser-to-GPU power cable (check orientation; the wrong cable has fried P40s). Driver branch 580 (the last for Pascal, LTS to mid-2028). Ollama via its CUDA 12 runner. vLLM does NOT support sm_61.

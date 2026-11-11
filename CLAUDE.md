@@ -19,7 +19,7 @@ Brian's personal assistant: Nous Research **Hermes Agent**, using the persona "J
 
 ## Phase 1 — basics (CURRENT)
 Files in this folder: `01-create-lxc.sh` (run on the host), `02-bootstrap.sh` (runs in the CT), `SOUL.md`, `env.template`, `Caddyfile.snippet`, `README.md` (runbook).
-Not yet run on the R730. The open items were answered from the Hermes source at stable tag v0.23.1 (the installer's default channel) and the Teams CLI 3.1.0 package:
+Being run on the R730 now (status at the end of this list). The open items were answered from the Hermes source at stable tag v0.23.1 (the installer's default channel) and the Teams CLI 3.1.0 package:
 - Installer flags: `--non-interactive` and `--skip-computer-use` are both accepted (scripts/install.sh).
 - Teams bind: the listener defaults to all interfaces, IPv4+IPv6 (`_DEFAULT_HOST = None`); `TEAMS_HOST` pins it. `/health` returns `ok`. xen-pxy can reach it, so no local proxy is needed.
 - Teams extra: `hermes pm install --extra teams` (also `anthropic`, `telegram`; all are lazy-installed otherwise). The bootstrap runs it.
@@ -32,6 +32,7 @@ Fixed in the kit:
 - `01-create-lxc.sh` refuses to create a duplicate CT, fails clearly if the network doesn't come up, and prints the re-run command if the bootstrap fails.
 - From the host preflight: `STORAGE` is now `local-zfs`, and the template pick matches the host arch, because `pveam` lists amd64 and arm64 and a plain sort took arm64.
 - First real run (2026-11-11): CT 112 `xen-jarvis` was created with a static IP ending .112. The bootstrap failed at `apt-get update` with "Network is unreachable": no default route, most likely `IP_CFG` without `gw=`. DNS still resolved, so the old DNS-only wait passed. The script now rejects a static `IP_CFG` without `gw=` and waits for a default route.
+- Fixed live with `pct set 112 --net0 ...,gw=192.168.128.1` (the host's gateway). The bootstrap re-run then succeeded with no warnings: Hermes installed, extras installed, Hermes Node v26.12.1, Teams CLI 3.1.0. CT 112 = 192.168.128.112 (Caddy's JARVIS_IP).
 
 ## Phase 2 — planned, not started
 - Hardware: 1–2 Tesla P40 (24 GB, Pascal sm_61) in the R730. Needs the GPU enablement kit, 1100 W PSUs, and the correct riser-to-GPU power cable (check orientation; the wrong cable has fried P40s). Driver branch 580 (the last for Pascal, LTS to mid-2028). Ollama via its CUDA 12 runner. vLLM does NOT support sm_61.

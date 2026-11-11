@@ -1,0 +1,10 @@
+# Add to the Caddyfile on xen-pxy, then: systemctl reload caddy
+# Replace JARVIS_IP with the LXC's address. Only the Bot Framework endpoint is exposed.
+jarvis.xenspidey.com {
+	handle /api/messages {
+		reverse_proxy JARVIS_IP:3978
+	}
+	handle {
+		respond 404
+	}
+}

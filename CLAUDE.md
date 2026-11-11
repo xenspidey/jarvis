@@ -15,6 +15,7 @@ Brian's personal assistant: Nous Research **Hermes Agent**, using the persona "J
 - The gateway runs as a **system** service: `hermes gateway install --system --run-as-user jarvis`. Hermes refuses user services inside containers.
 - Allowlists are always on (`TELEGRAM_ALLOWED_USERS`, `TEAMS_ALLOWED_USERS`). Never use `*_ALLOW_ALL_USERS`.
 - Brian's rules for Jarvis and for you: don't guess (verify, or say "I don't know"); verify URLs; ask before destructive or irreversible actions.
+- When walking Brian through host/CT steps: give ONE command, wait for its output, then the next. No branching "if X do this, else that" plans.
 
 ## Phase 1 — basics (CURRENT)
 Files in this folder: `01-create-lxc.sh` (run on the host), `02-bootstrap.sh` (runs in the CT), `SOUL.md`, `env.template`, `Caddyfile.snippet`, `README.md` (runbook).

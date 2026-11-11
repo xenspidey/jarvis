@@ -28,6 +28,13 @@ if [ -n "$EXISTING" ]; then
   exit 1
 fi
 
+# A static IP without gw= leaves the CT with LAN DNS but no internet ("Network is unreachable").
+case "$IP_CFG" in
+  dhcp|*gw=*) ;;
+  *) echo "IP_CFG is a static address with no gateway. Add ,gw=<router IP> (this host's: $(ip route show default | awk '{print $3; exit}'))"
+     exit 1 ;;
+esac
+
 echo ">> Locating latest Debian 13 template..."
 pveam update >/dev/null
 # pveam lists amd64 and arm64 builds; a plain version sort would pick arm64. Match the host.
@@ -53,12 +60,15 @@ pct create "$VMID" "$TEMPLATE_STORAGE:vztmpl/$TEMPLATE" \
 pct start "$VMID"
 echo ">> Waiting for network..."
 NET_OK=0
+# Needs a default route AND DNS: DNS alone can work on the LAN with no gateway set.
 for _ in $(seq 1 30); do
-  if pct exec "$VMID" -- getent hosts deb.debian.org >/dev/null 2>&1; then NET_OK=1; break; fi
+  if pct exec "$VMID" -- sh -c '{ ip route show default; ip -6 route show default; } | grep -q . && getent hosts deb.debian.org' >/dev/null 2>&1; then
+    NET_OK=1; break
+  fi
   sleep 2
 done
 if [ "$NET_OK" -ne 1 ]; then
-  echo "CT $VMID has no working DNS/network after 60 s. Check BRIDGE/IP_CFG, then: pct enter $VMID"
+  echo "CT $VMID has no default route or DNS after 60 s. Check BRIDGE/IP_CFG (gw=), then: pct exec $VMID -- ip route"
   exit 1
 fi
 

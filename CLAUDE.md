@@ -30,6 +30,7 @@ Fixed in the kit:
 - Teams CLI login is in-memory only without `libsecret-1-0` (now installed); with it, the CLI falls back to a plaintext `~/.config/teams-cli/msal-cache.json`. The runbook registers the bot before the gateway starts, then runs `teams logout` and deletes the cache. Login uses `--device-code` (headless CT).
 - `01-create-lxc.sh` refuses to create a duplicate CT, fails clearly if the network doesn't come up, and prints the re-run command if the bootstrap fails.
 - From the host preflight: `STORAGE` is now `local-zfs`, and the template pick matches the host arch, because `pveam` lists amd64 and arm64 and a plain sort took arm64.
+- First real run (2026-11-11): CT 112 `xen-jarvis` was created with a static IP ending .112. The bootstrap failed at `apt-get update` with "Network is unreachable": no default route, most likely `IP_CFG` without `gw=`. DNS still resolved, so the old DNS-only wait passed. The script now rejects a static `IP_CFG` without `gw=` and waits for a default route.
 
 ## Phase 2 — planned, not started
 - Hardware: 1–2 Tesla P40 (24 GB, Pascal sm_61) in the R730. Needs the GPU enablement kit, 1100 W PSUs, and the correct riser-to-GPU power cable (check orientation; the wrong cable has fried P40s). Driver branch 580 (the last for Pascal, LTS to mid-2028). Ollama via its CUDA 12 runner. vLLM does NOT support sm_61.

@@ -5,9 +5,11 @@ Unprivileged Debian 13 LXC, `jarvis` service user, Anthropic API, and three ways
 Checked against the source of Hermes Agent **stable v0.23.1** (installer, Teams adapter, `hermes pm`, gateway service) and Teams CLI **3.1.0**. It hasn't been run on the R730 yet, so if a step doesn't match what you see, stop and note it.
 
 ## 1. Copy the kit to the R730 host
+From your PC (PowerShell or bash). Don't put a trailing slash on the source folder: Windows' scp then fails with "path canonicalization failed".
 ```bash
-scp -r jarvis/ root@192.168.128.172:/root/
+scp -r jarvis root@192.168.128.172:/root/jarvis
 ```
+The repo's `.gitattributes` keeps LF line endings even in a Windows clone. On the host, `grep -c $'\r' /root/jarvis/*.sh` should print `0` for every file.
 
 ## 2. Create the container (on the host)
 Check the variables at the top of `01-create-lxc.sh` (storage, bridge, IP). Caddy on xen-pxy points at the CT's IP, so either set a static `IP_CFG` or reserve the DHCP lease on your router afterwards. Then:

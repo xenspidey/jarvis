@@ -11,7 +11,7 @@ Brian's personal assistant: Nous Research **Hermes Agent**, using the persona "J
 
 ## Decisions so far
 - Model: Anthropic API key (`ANTHROPIC_API_KEY` in `~/.hermes/.env`), chosen with `hermes model`.
-- Channels: terminal, Telegram (outbound polling), Microsoft Teams (bot at `https://jarvis.xenspidey.com/api/messages` → Caddy → LXC:3978).
+- Channels: terminal and Microsoft Teams (bot at `https://jarvis.xenspidey.com/api/messages` → Caddy → LXC:3978). **Telegram dropped** (2026-11-11, Brian's call; the blank TELEGRAM_* lines in .env are harmless). End goal is voice (Phase 2). Teams is now Brian's only remote admin channel besides the terminal.
 - The gateway runs as a **system** service: `hermes gateway install --system --run-as-user jarvis`. Hermes refuses user services inside containers.
 - Allowlists are always on (`TELEGRAM_ALLOWED_USERS`, `TEAMS_ALLOWED_USERS`). Never use `*_ALLOW_ALL_USERS`.
 - Brian's rules for Jarvis and for you: don't guess (verify, or say "I don't know"); verify URLs; ask before destructive or irreversible actions.
@@ -38,7 +38,7 @@ Fixed in the kit:
 - Root-run hermes leaves root-owned `__pycache__/*.pyc` in the checkout; fixed with `find /home/jarvis ! -user jarvis -exec chown jarvis:jarvis {} +`. For lifecycle as root, prefer `systemctl … hermes-gateway-c51abf38` (no Python as root); `systemctl reload` = graceful drain.
 - Install warned `/run/user/1000/bus did not appear`: fixed by `apt-get install dbus-user-session` + `systemctl restart user@1000.service` (now in the bootstrap).
 - Terminal chat verified: replies as Jarvis ("Hello, Brian."), config.yaml `provider: "anthropic"`, `default: "claude-fable-5-2"`; the banner's "Nous Research" is branding. Only one gateway process (inside the service cgroup), so the CLI attached to the service. Shared metrics: off.
-- Next: Telegram (README step 4), then Teams (step 5, stop the service during the M365 login).
+- Next: Teams (README step 5): check xen-pxy's Caddy site layout, add the jarvis site, then stop the service during the M365 login.
 
 ## Phase 2 — planned, not started
 - Hardware: 1–2 Tesla P40 (24 GB, Pascal sm_61) in the R730. Needs the GPU enablement kit, 1100 W PSUs, and the correct riser-to-GPU power cable (check orientation; the wrong cable has fried P40s). Driver branch 580 (the last for Pascal, LTS to mid-2028). Ollama via its CUDA 12 runner. vLLM does NOT support sm_61.

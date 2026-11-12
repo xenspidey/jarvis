@@ -38,7 +38,8 @@ Fixed in the kit:
 - Root-run hermes leaves root-owned `__pycache__/*.pyc` in the checkout; fixed with `find /home/jarvis ! -user jarvis -exec chown jarvis:jarvis {} +`. For lifecycle as root, prefer `systemctl … hermes-gateway-c51abf38` (no Python as root); `systemctl reload` = graceful drain.
 - Install warned `/run/user/1000/bus did not appear`: fixed by `apt-get install dbus-user-session` + `systemctl restart user@1000.service` (now in the bootstrap).
 - Terminal chat verified: replies as Jarvis ("Hello, Brian."), config.yaml `provider: "anthropic"`, `default: "claude-fable-5-2"`; the banner's "Nous Research" is branding. Only one gateway process (inside the service cgroup), so the CLI attached to the service. Shared metrics: off.
-- Next: Teams (README step 5): check xen-pxy's Caddy site layout, add the jarvis site, then stop the service during the M365 login.
+- Channel order decided 2026-11-11: **Hermes Desktop app first** (Windows, voice: dictation/live voice/wake word), then Discord (phone voice), then decide on Teams. Echo/Home Assistant stays Phase 2.
+- Desktop connects with the **SSH** connection kind (`jarvis@192.168.128.112`): the app tunnels in and starts `hermes serve` itself on loopback, so no LAN port or auth provider. Set the connection's Hermes path to `/home/jarvis/.local/bin/hermes` (Debian's .bashrc returns early for non-interactive shells). Download per docs: https://hermes-agent.nousresearch.com/desktop (not fetchable from the cloud session). sshd in CT 112: active.
 
 ## Phase 2 — planned, not started
 - Hardware: 1–2 Tesla P40 (24 GB, Pascal sm_61) in the R730. Needs the GPU enablement kit, 1100 W PSUs, and the correct riser-to-GPU power cable (check orientation; the wrong cable has fried P40s). Driver branch 580 (the last for Pascal, LTS to mid-2028). Ollama via its CUDA 12 runner. vLLM does NOT support sm_61.
